@@ -63,7 +63,13 @@ def serverListen(serverSocket):
 			serverSocket.send(bytes(password, "utf-8"))
 			id_number = input("Please enter your id_number:")
 			serverSocket.recv(1024)
-			serverSocket.send(bytes(id_number, "utf-8"))      #id_number send
+			serverSocket.send(bytes(id_number, "utf-8"))
+			role = input("Please enter your role: 1- Student, 2- Professor\n")
+			serverSocket.recv(1024)
+			if role == "1":
+				serverSocket.send(b"/addStudent")
+			elif role == "2":
+				serverSocket.send(b"/addProfessor")
 			response = serverSocket.recv(1024).decode("utf-8")
 			print(response)
 			if response == "/registerSuccess":
