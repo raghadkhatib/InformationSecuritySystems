@@ -6,6 +6,7 @@ import sys
 import os
 from io import BytesIO
 from Crypto.Cipher import AES
+from datetime import datetime
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -18,10 +19,17 @@ import base64
 
 state = {}
 sission = {}
+grades = {}
+client_info = {}
 is_logged_in = False
+global private_key
 private_key = None
 server_public_key = None
 global session_key
+global client_list
+client_list = 0
+global client_ip
+client_ip = None
 
 def serverListen(serverSocket):
 	print('\nclient1')
@@ -67,8 +75,10 @@ def serverListen(serverSocket):
 			role = input("Please enter your role: 1- Student, 2- Professor\n")
 			serverSocket.recv(1024)
 			if role == "1":
+				state["userRole"] = 1
 				serverSocket.send(b"/addStudent")
 			elif role == "2":
+				state["userRole"] = 0
 				serverSocket.send(b"/addProfessor")
 			response = serverSocket.recv(1024).decode("utf-8")
 			print(response)
@@ -77,12 +87,18 @@ def serverListen(serverSocket):
 				state["alive"] = True
 				is_logged_in = True
 				print("Registration successful! You can now login.")
-				print("Available Commands:\n/1 -> Add extra information\n/2 -> Enter your projects\n")
+				print("Available Commands:\n/1 -> Add extra information\n")
+				if state["userRole"] == 1:
+					print("/2 -> Enter your projects\n")
+				if state["userRole"] == 0:
+					print("/3 -> Enter Student Marks\n")
 				choose = input("choose: ")
 				if choose =="/1":
 					serverSocket.send(b"/add_info")
 				elif choose =="/2":
 					serverSocket.send(b"/manage_projects")
+				elif choose =="/3":
+					serverSocket.send(b"/add-students-menu")
 			else:
 				print("Registration failed. Username may already be taken.")
 				##
@@ -149,6 +165,32 @@ def serverListen(serverSocket):
 				print("your projects stored.")
 			else:
 				print("something wrong!")
+		elif msg == "/add-students-menu":
+			global client_list
+			client_list += 1
+			subject_name = input("Enter subject's name: ")
+			grades["subject_name"] = subject_name
+			while True:
+				student_name = input("Enter student's name (or '/' to finish): ")
+				if student_name == '/':
+					break
+				grade = input(f"Enter grade for {student_name}: ")
+				grades[student_name] = grade
+			timestamp = datetime.utcnow()
+			grades["time"] = timestamp
+			grades_str = str(grades)
+			client_info[client_ip] = client_list
+			print("this ------", timestamp)
+			signature = private_key.sign(grades_str.encode('utf-8'), timestamp=timestamp)
+			client_bytes = bytes(str(client_info), 'utf-8')
+			grades_bytes = bytes(grades_str, 'utf-8')
+			# signature_bytes = bytes(str(signature), 'utf-8')
+			signature_bytes = bytes(signature)
+			signature_str = base64.b64encode(signature_bytes).decode('utf-8')
+			data_to_send = client_bytes + b'\n' + grades_bytes + b'\n' +  signature_str.encode('utf-8')
+			serverSocket.send(data_to_send)
+			print("Grades:", grades_str)
+			print("Signature:", signature)
 		else:
 			print(msg)
 
@@ -187,6 +229,10 @@ def main():
 	state["alive"] = False     
 
 	hyper = Hyper()
+	global private_key
+	global client_ip
+	client_ip = serverSocket.recv(1024).decode("utf-8")
+	print(client_ip)
 
 	try:
 		# Load private key
@@ -194,7 +240,7 @@ def main():
 			private_key, _ = pgpy.PGPKey.from_file(f)
 	except Exception as e:
 		print(f"Error loading private key: {e}")
-		private_key = hyper.pgp('client_')
+		private_key = hyper.pgp('client_' + client_ip)
 
 	# print(private_key)
 	# Send client's public key to the server

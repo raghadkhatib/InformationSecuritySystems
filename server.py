@@ -4,6 +4,7 @@ import threading
 import pickle
 import os
 import sys
+import ast
 from Crypto.Cipher import AES
 
 from cryptography.hazmat.primitives import serialization
@@ -23,15 +24,16 @@ session = {}
 global private_key
 private_key = None
 client_public_keys = {}
-
+global client_count
+client_count = 0
 
 def load_user_credentials():
     if os.path.exists(USER_CREDENTIALS_FILE):
         with open(USER_CREDENTIALS_FILE, "r") as file:
             lines = file.readlines()
             for line in lines:
-                username, password, id_number = line.strip().split(":")
-                user_credentials[username] = {'password': password, 'id_number': id_number}
+                username, password, id_number, userRole = line.strip().split(":")
+                user_credentials[username] = {'password': password, 'id_number': id_number , 'userRole':userRole}
 
 
 def load_or_generate_private_key():
@@ -175,8 +177,32 @@ def serverListen(clientSocket):
             client_ip = str(clientSocket.getpeername()[0])
             session[client_ip] = session_key
             print(session)
-
-
+        elif msg == "/add-students-menu":
+            clientSocket.send(b"/add-students-menu")
+            data_received = clientSocket.recv(4024)  # Adjust the buffer size as needed
+            list_bytes, grades_bytes, signature_str = data_received.split(b'\n' , 2)
+            list_str = list_bytes.decode('utf-8')
+            grades_str = grades_bytes.decode('utf-8')
+            # signature_str = signature_bytes.decode('utf-8')
+            signature_bytes = base64.b64decode(signature_str)
+            print("list_info:", list_str)
+            print("Grades:", grades_str)
+            print("Signature:", signature_str)
+            # Convert the binary signature to the type expected by the verify method
+            signature = pgpy.PGPSignature.from_blob(signature_bytes)
+            print("Signature:", signature)
+            # Assuming public_key is the public key corresponding to the private_key used for signing
+            # Safely evaluate the string as a dictionary
+            data_dict = ast.literal_eval(list_str)
+            # Extract the first key
+            first_key = list(data_dict.keys())[0]
+            public_key = get_client_public_key(str(clientSocket.getpeername()[0])+first_key)
+            is_verified = public_key.verify(grades_str.encode('utf-8'), signature)
+            if is_verified:
+                print("Signature verified successfully")
+            else:
+                print("Signature verification failed")
+            
 def user_info(phone, email):
     with open(USER_info_FILE, "a") as file:
         file.write(f"{state['username']}:{phone}:{email}\n")
@@ -225,17 +251,20 @@ def main():
     # Load or generate the private key 
     load_or_generate_private_key()
     print(private_key)
+    global client_count
 
     while True:
         client, client_address = listenSocket.accept()
         threading.Thread(target=serverListen, args=(client,)).start()
+        client_count += 1
+        client.send(str(client_count).encode('utf-8'))
         # Receive client's public key --handshaking--
         client_public_key_bytes = client.recv(4096)
         client_public_key = pgpy.PGPKey()
         client_public_key.parse(client_public_key_bytes.decode('utf-8'))
 
         # Save client's public keys
-        add_client_public_key(client_address[0], client_public_key)
+        add_client_public_key(client_address[0]+str(client_count), client_public_key)
         print("Client's public key:", client_public_key)
         # print(client_public_keys)
         # Send server's public key to the client
