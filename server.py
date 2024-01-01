@@ -17,8 +17,10 @@ import base64
 
 USER_CREDENTIALS_FILE = "user_credentials.txt"
 USER_info_FILE = "user_info.txt"
+DC_requests_FILE = "DC_requests.txt"
 USER_PROJECTS_FILE = "user_projects.txt"
 user_credentials = {}
+DC_requests = {}
 state = {}
 session = {}
 global private_key
@@ -34,6 +36,20 @@ def load_user_credentials():
             for line in lines:
                 username, password, id_number, userRole = line.strip().split(":")
                 user_credentials[username] = {'password': password, 'id_number': id_number , 'userRole':userRole}
+
+def load_DC_requests():
+    if os.path.exists(DC_requests_FILE):
+        with open(DC_requests_FILE, "r") as file:
+            lines = file.readlines()
+            for line in lines:
+                username, user_pupk,mathm,solv = line.strip().split(":")
+                DC_requests[username] = {'user_pupk': user_pupk, 'mathm': mathm, 'solv': solv}
+
+def save_DC_requests():
+    with open(DC_requests_FILE, "w") as file:
+        for username in DC_requests.keys():
+            file.write(
+                f"{username}:{DC_requests[username].get('user_pupk')}:{DC_requests[username].get('mathm')}:{DC_requests[username].get('solv')}\n")
 
 
 def load_or_generate_private_key():
@@ -76,7 +92,9 @@ def serverListen(clientSocket):
                 state["username"] = username
                 clientSocket.send(b"/loginSuccess")
                 clientSocket.recv(1024).decode("utf-8")
-                clientSocket.send(user_credentials[username].get('id_number'))
+                clientSocket.send(bytes(user_credentials[username].get('id_number'), "utf-8"))
+                #clientSocket.recv(1024).decode("utf-8")
+                #clientSocket.send(bytes(user_credentials[username].get('userRole'), "utf-8"))
                 break
             else:
                 clientSocket.send(b"/loginFailed")
@@ -104,8 +122,8 @@ def serverListen(clientSocket):
             clientSocket.send(b"/add_info")
             key1 = bytes(user_credentials[state["username"]].get('id_number') + user_credentials[state["username"]].get(
                 'id_number') + user_credentials[state["username"]].get('id_number') + user_credentials[
-                             state["username"]].get('id_number') + user_credentials[state["username"]].get('id_number'),
-                         "utf-8")  ##############
+                            state["username"]].get('id_number') + user_credentials[state["username"]].get('id_number'),
+                        "utf-8")  ##############
             key = key1[:16]
             ciphertext = clientSocket.recv(1024)
             clientSocket.send(b"/ciperreseve1")
@@ -202,12 +220,43 @@ def serverListen(clientSocket):
                 print("Signature verified successfully")
             else:
                 print("Signature verification failed")
-            
+        elif msg == "/request_get_DC":
+            print('server12DC', msg)
+            load_DC_requests()
+            clientSocket.send(b"/request_get_DC")
+            username = clientSocket.recv(1024).decode("utf-8")
+            clientSocket.send(b"/sendkeyyyy")
+            user_pupk = clientSocket.recv(1024).decode("utf-8")
+            message = DC_request(username,user_pupk)    
+            clientSocket.send(bytes(message, "utf-8"))
+        elif msg == "/show_request_DC":
+            load_DC_requests()
+            print('server12S_DC', msg)
+            clientSocket.send(b"/request_get_DC")
+            respo=clientSocket.recv(1024)
+            if respo=="/0":
+                break
+            clientSocket.send(b"/username_re recive")
+            mathm1=clientSocket.recv(1024)
+            clientSocket.send(b"/mathm1 recive")
+            solv1=clientSocket.recv(1024)
+            pupk=DC_requests[respo].get('user_pupk')
+            DC_requests[respo]={'user_pupk': pupk,"mathm":mathm1,"solv":solv1}
+
+
+
 def user_info(phone, email):
     with open(USER_info_FILE, "a") as file:
         file.write(f"{state['username']}:{phone}:{email}\n")
         file.close()
 
+def DC_request(username,user_pupk):
+    if username not in DC_requests:
+        DC_requests[username] = {'user_pupk': user_pupk,"mathm":None,"solv":None}
+        save_DC_requests()
+        return "\nyour request send to CA successfuly "
+    else:
+        return "you have send a request before."
 
 def user_projects(projects):
     with open(USER_PROJECTS_FILE, "a") as file:
