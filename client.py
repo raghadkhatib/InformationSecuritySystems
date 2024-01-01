@@ -21,6 +21,7 @@ state = {}
 sission = {}
 grades = {}
 client_info = {}
+global is_logged_in
 is_logged_in = False
 global private_key
 private_key = None
@@ -31,13 +32,35 @@ client_list = 0
 global client_ip
 client_ip = None
 
+def command(serverSocket):
+	print("logg:   ",is_logged_in)
+	if is_logged_in:
+		print("Available Commands:\n/1 -> Add extra information\n/4 -> Logout\n")
+		if state["userRole"] == 1:
+			print("/2 -> Enter your projects\n")
+		if state["userRole"] == 0:
+			print("/3 -> Enter Student Marks\n")
+		choose = input("choose: ")
+		if choose =="/1":
+			serverSocket.send(b"/add_info")
+		elif choose =="/2":
+			serverSocket.send(b"/manage_projects")
+		elif choose =="/3":
+			serverSocket.send(b"/add-students-menu")
+		elif choose == "/4":
+			serverSocket.shutdown(socket.SHUT_RDWR)
+			serverSocket.close()
+			print("Disconnected from UniSite.")
+		else:
+			command(serverSocket)
+
 def serverListen(serverSocket):
-	print('\nclient1')
+	# print('\nclient1')
 	while True:
 		msg = serverSocket.recv(1024).decode("utf-8")
-		print("---aaaaaaa", msg)
+		print("---", msg)
 		if msg == "/login":
-			print('\nclient1log')
+			# print('\nclient1log')
 			print("Please Enter your username:")
 			with state["inputCondition"]:
 				state["inputCondition"].wait()
@@ -48,28 +71,31 @@ def serverListen(serverSocket):
 			serverSocket.send(bytes(password, "utf-8"))     #password send
 			response = serverSocket.recv(1024).decode("utf-8")
 			print(response)
+			global is_logged_in
 			if response == "/loginSuccess":
 				serverSocket.send(b"/get_id_number")
-				state["id_number"]=serverSocket.recv(1024)
+				state["id_number"]=serverSocket.recv(1024).decode('utf-8')
+				serverSocket.send(b"/get_role")
+				state["userRole"]=int(serverSocket.recv(1024).decode('utf-8'))
 				state["alive"] = True
 				is_logged_in = True
 				print("Login successful!")
-				break
+				command(serverSocket)
 			else:
 				print("Login failed. Please try again.")
 		elif msg == "/register":
-			print('\nclient12reg')  
+			# print('\nclient12reg')  
 			state["inputMessage"] = False
-			print("Please enter the usernamerrrrrrrrrrr ")
+			print("Please enter the username:  ")
 			with state["inputCondition"]:
 				state["inputCondition"].wait()
 			state["inputMessage"] = True
 			serverSocket.send(bytes(state["userInput"],"utf-8"))   #username send
-			print('\nclient1reggggggg')
-			password = input("Choose a password: ")
+			# print('\nclient1reggggggg')
+			password = input("Enter a password: ")
 			serverSocket.recv(1024)
 			serverSocket.send(bytes(password, "utf-8"))
-			id_number = input("Please enter your id_number:")
+			id_number = input("Please enter your national_number:")
 			serverSocket.recv(1024)
 			serverSocket.send(bytes(id_number, "utf-8"))
 			role = input("Please enter your role: 1- Student, 2- Professor\n")
@@ -87,18 +113,7 @@ def serverListen(serverSocket):
 				state["alive"] = True
 				is_logged_in = True
 				print("Registration successful! You can now login.")
-				print("Available Commands:\n/1 -> Add extra information\n")
-				if state["userRole"] == 1:
-					print("/2 -> Enter your projects\n")
-				if state["userRole"] == 0:
-					print("/3 -> Enter Student Marks\n")
-				choose = input("choose: ")
-				if choose =="/1":
-					serverSocket.send(b"/add_info")
-				elif choose =="/2":
-					serverSocket.send(b"/manage_projects")
-				elif choose =="/3":
-					serverSocket.send(b"/add-students-menu")
+				command(serverSocket)
 			else:
 				print("Registration failed. Username may already be taken.")
 				##
@@ -119,7 +134,7 @@ def serverListen(serverSocket):
 			serverSocket.recv(1024)
 			serverSocket.send(nonce)   
 			serverSocket.recv(1024)
-			email = input("Choose a email: ")
+			email = input("Enter an email: ")
 			cipher = AES.new(key, AES.MODE_EAX)
 			nonce=cipher.nonce
 			ciphertext2, tag2 = cipher.encrypt_and_digest(bytes(email,"utf-8"))       ##email encode
@@ -138,10 +153,12 @@ def serverListen(serverSocket):
 			cipher = AES.new(key, AES.MODE_EAX,nonce=nonce)
 			server_response = cipher.decrypt_and_verify(ciphertext, tag).decode("utf-8") 
 			print(server_response)
-			break
+			command(serverSocket)
 		elif msg == "/manage_projects":
 			print("\n" , session_key)
 			print(len(session_key))
+			serverSocket.send(bytes(client_ip , "utf-8"))
+			serverSocket.recv(1024)
 			print("\n client projects:")
 			projects = input("Enter your list of projects (comma-separated): ")
 			cipher = AES.new(session_key, AES.MODE_EAX)
@@ -160,11 +177,12 @@ def serverListen(serverSocket):
 			nonce = serverSocket.recv(1024)
 			cipher = AES.new(session_key, AES.MODE_EAX , nonce = nonce)
 			response = cipher.decrypt_and_verify(response, tag).decode("utf-8") 
-			print(response)
+			# print(response)
 			if response == "/done":
 				print("your projects stored.")
 			else:
 				print("something wrong!")
+			command(serverSocket)
 		elif msg == "/add-students-menu":
 			global client_list
 			client_list += 1
@@ -189,10 +207,16 @@ def serverListen(serverSocket):
 			signature_str = base64.b64encode(signature_bytes).decode('utf-8')
 			data_to_send = client_bytes + b'\n' + grades_bytes + b'\n' +  signature_str.encode('utf-8')
 			serverSocket.send(data_to_send)
-			print("Grades:", grades_str)
-			print("Signature:", signature)
+			# print("Grades:", grades_str)
+			# print("Signature:", signature)
+			response = serverSocket.recv(1024).decode("utf-8")
+			if response == "/done":
+				print("your projects stored.")
+			else:
+				print("something wrong!")
+			command(serverSocket)
 		else:
-			print(msg)
+			command(serverSocket)
 
 def userInput(serverSocket):
 	while True:
@@ -236,7 +260,7 @@ def main():
 
 	try:
 		# Load private key
-		with open("client_private_key.asc", "r") as f:
+		with open("client_"+client_ip+"private_key.asc", "r") as f:
 			private_key, _ = pgpy.PGPKey.from_file(f)
 	except Exception as e:
 		print(f"Error loading private key: {e}")
@@ -263,6 +287,8 @@ def main():
 	print("before send")
 	# Send the encrypted session key to the server
 	serverSocket.send(b"/session")
+	serverSocket.send(bytes(client_ip , "utf-8"))
+	serverSocket.recv(1024)
 	# serverSocket.send(bytes(str(encrypted_session_key).encode('utf-8')))
 	encoded_session_key = base64.b64encode(encrypted_session_key).decode("utf-8")
 	serverSocket.send(encoded_session_key.encode("utf-8"))
@@ -287,7 +313,7 @@ def main():
 		if not state["alive"]:
 			serverSocket.shutdown(socket.SHUT_RDWR)
 			serverSocket.close()
-			print("Disconnected from PyconChat.")
+			print("Disconnected from UniSite.")
 			break
 		
 
