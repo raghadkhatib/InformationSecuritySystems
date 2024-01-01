@@ -40,16 +40,28 @@ def load_user_credentials():
 def load_DC_requests():
     if os.path.exists(DC_requests_FILE):
         with open(DC_requests_FILE, "r") as file:
-            lines = file.readlines()
-            for line in lines:
-                username, user_pupk,mathm,solv = line.strip().split(":")
-                DC_requests[username] = {'user_pupk': user_pupk, 'mathm': mathm, 'solv': solv}
+            #lines = file.readlines()
+            #for line in lines:
+            #username, user_pupk,mathm,solv = line.strip().split(":")
+            lines = file.read()
+            #username, user_pupk,mathm,solv = lines.strip().split(":")
+            xx = lines.split(",,")
+            print(xx)
+            for one in xx:
+                if one =="\n":
+                    print("bbbbbbbbbbbbb")
+                    break
+                else:
+                    print(one)
+                    print("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
+                    username, user_pupk,mathm,solv = one.split(":")
+                    DC_requests[username] = {'user_pupk': user_pupk, 'mathm': mathm, 'solv': solv}
 
 def save_DC_requests():
     with open(DC_requests_FILE, "w") as file:
         for username in DC_requests.keys():
             file.write(
-                f"{username}:{DC_requests[username].get('user_pupk')}:{DC_requests[username].get('mathm')}:{DC_requests[username].get('solv')}\n")
+                f"{username}:{DC_requests[username].get('user_pupk')}:{DC_requests[username].get('mathm')}:{DC_requests[username].get('solv')},,\n")
 
 
 def load_or_generate_private_key():
@@ -71,7 +83,7 @@ def save_user_credentials():
         # print(user_credentials.items())
         for username in user_credentials.keys():
             file.write(
-                f"{username}:{user_credentials[username].get('password')}:{user_credentials[username].get('id_number')}:{user_credentials[username].get('userRole')}\n")
+                f"{username}:{user_credentials[username].get('password')}:{user_credentials[username].get('id_number')}:{user_credentials[username].get('userRole')},,\n")
 
 
 def serverListen(clientSocket):
