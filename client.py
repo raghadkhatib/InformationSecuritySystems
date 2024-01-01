@@ -42,8 +42,10 @@ def command(serverSocket):
 			print("/3 -> Enter Student Marks\n")
 		if state["userRole"] == 0:
 			print("/4 -> send request to get DC \n")
+		if state["userRole"] == 0:
+			print("/5 -> show my request state to get DC  \n")
 		if state["userRole"] == 2:
-			print("/5 -> show request to get DC \n")
+			print("/6 -> show request to get DC \n")
 		choose = input("choose: ")
 		if choose =="/1":
 			serverSocket.send(b"/add_info")
@@ -54,8 +56,10 @@ def command(serverSocket):
 		elif choose =="/4":
 			serverSocket.send(b"/request_get_DC")
 		elif choose =="/5":
+			serverSocket.send(b"/my_request_state")
+		elif choose =="/6":
 			serverSocket.send(b"/show_request_DC")
-		elif choose == "/6":
+		elif choose == "/7":
 			serverSocket.shutdown(socket.SHUT_RDWR)
 			serverSocket.close()
 			print("Disconnected from UniSite.")
@@ -234,10 +238,25 @@ def serverListen(serverSocket):
 			massege=serverSocket.recv(1024)
 			print(massege)
 			break
+		elif msg == "/my_request_state":
+			print('\nclient_my_request_state')  
+			serverSocket.send(bytes(state["username"],"utf-8"))    
+			respon=serverSocket.recv(1024).decode('utf-8')
+			if respon=="/waiting":
+				print('\nyour request in process') 
+			else:
+				print('\nanswer this question to verify:') 
+				print(respon) 
+				answe = input("answer is: ")
+				serverSocket.send(bytes(answe, "utf-8")) 
+				resp=serverSocket.recv(1024).decode('utf-8')
+				print(resp)
+
+			break
 		elif msg == "/show_request_DC":
 			print('\nclientCA_show_request_DC')  
 			serverSocket.send(b"/WAITING THE REQUESTS")  
-			requests=serverSocket.recv(1024).decode('utf-8')
+			requests=serverSocket.recv(8600).decode('utf-8')
 			print(requests)
 			print(f"Converted string: {requests}")
 			#for username in requests.keys():

@@ -247,6 +247,25 @@ def serverListen(clientSocket):
             user_pupk = clientSocket.recv(1024).decode("utf-8")
             message = DC_request(username,user_pupk)    
             clientSocket.send(bytes(message, "utf-8"))
+        elif msg == "/my_request_state":
+            print('server12', msg)
+            load_DC_requests()
+            clientSocket.send(b"/my_request_state")
+            username = clientSocket.recv(1024).decode("utf-8")
+            quest=DC_requests[username].get('mathm')
+            if quest==None:
+                clientSocket.send(bytes("/waiting", "utf-8"))
+            else:
+                clientSocket.send(bytes(quest, "utf-8"))
+                answe=clientSocket.recv(1024).decode("utf-8")
+                if answe==DC_requests[username].get('solv'):
+                    clientSocket.send(b"/verify done ")
+                    ###########give dc
+                else:
+                    clientSocket.send(b"/verify failed try again")
+                
+
+
         elif msg == "/show_request_DC":
             load_DC_requests()
             print('server12S_DC', msg)
