@@ -244,16 +244,22 @@ def serverListen(clientSocket):
         elif msg == "/show_request_DC":
             load_DC_requests()
             print('server12S_DC', msg)
-            clientSocket.send(b"/request_get_DC")
-            respo=clientSocket.recv(1024)
+            clientSocket.send(b"/show_request_DC")
+            clientSocket.recv(1024)
+            req=str(DC_requests)
+            clientSocket.send(str(req).encode('utf-8'))
+            #clientSocket.send(bytes(req, "utf-8"))
+            respo=clientSocket.recv(1024).decode("utf-8")
             if respo=="/0":
                 break
             clientSocket.send(b"/username_re recive")
-            mathm1=clientSocket.recv(1024)
+            mathm1=clientSocket.recv(1024).decode("utf-8")
             clientSocket.send(b"/mathm1 recive")
-            solv1=clientSocket.recv(1024)
+            solv1=clientSocket.recv(1024).decode("utf-8")
             pupk=DC_requests[respo].get('user_pupk')
+            print(mathm1)
             DC_requests[respo]={'user_pupk': pupk,"mathm":mathm1,"solv":solv1}
+            save_DC_requests()
 
 
 

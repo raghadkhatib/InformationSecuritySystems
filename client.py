@@ -214,15 +214,18 @@ def serverListen(serverSocket):
 		elif msg == "/show_request_DC":
 			print('\nclientCA_show_request_DC')  
 			serverSocket.send(b"/WAITING THE REQUESTS")  
-			requests=serverSocket.recv(1024)
-			for username in requests.keys():
-				print(f"{username}:{requests[username].get('user_pupk')}:{requests[username].get('mathm')}:{requests[username].get('solv')}\n")
+			requests=serverSocket.recv(1024).decode('utf-8')
+			print(requests)
+			print(f"Converted string: {requests}")
+			#for username in requests.keys():
+				#print("usernamerrr:",{username},requests[username].get('user_pupk'),requests[username].get('mathm'),requests[username].get('solv')+"\n")
+				#print(f"{username}:{requests[username].get('user_pupk')}:{requests[username].get('mathm')}:{requests[username].get('solv')}\n")
 			username_re=input("enter username you want to send varify  or enter /0 to break")
-			serverSocket.send(username_re)
+			serverSocket.send(username_re.encode('utf-8'))
 			if username_re=="/0":
 				break
 			else:
-				mathm=serverSocket.recv(1024) 
+				serverSocket.recv(1024) 
 				mathm=input("enter the moadala you want proff to solve :")
 				serverSocket.send(bytes(mathm, "utf-8"))
 				serverSocket.recv(1024)
