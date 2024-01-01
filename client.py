@@ -35,11 +35,15 @@ client_ip = None
 def command(serverSocket):
 	print("logg:   ",is_logged_in)
 	if is_logged_in:
-		print("Available Commands:\n/1 -> Add extra information\n/4 -> Logout\n")
+		print("Available Commands:\n/1 -> Add extra information\n/6 -> Logout\n")
 		if state["userRole"] == 1:
 			print("/2 -> Enter your projects\n")
 		if state["userRole"] == 0:
 			print("/3 -> Enter Student Marks\n")
+		if state["userRole"] == 0:
+			print("/4 -> send request to get DC \n")
+		if state["userRole"] == 2:
+			print("/5 -> show request to get DC \n")
 		choose = input("choose: ")
 		if choose =="/1":
 			serverSocket.send(b"/add_info")
@@ -47,7 +51,11 @@ def command(serverSocket):
 			serverSocket.send(b"/manage_projects")
 		elif choose =="/3":
 			serverSocket.send(b"/add-students-menu")
-		elif choose == "/4":
+		elif choose =="/4":
+			serverSocket.send(b"/request_get_DC")
+		elif choose =="/5":
+			serverSocket.send(b"/show_request_DC")
+		elif choose == "/6":
 			serverSocket.shutdown(socket.SHUT_RDWR)
 			serverSocket.close()
 			print("Disconnected from UniSite.")
@@ -65,7 +73,8 @@ def serverListen(serverSocket):
 			with state["inputCondition"]:
 				state["inputCondition"].wait()
 			state["inputMessage"] = True
-			serverSocket.send(bytes(state["userInput"],"utf-8"))   #username send
+			state["username"]=state["userInput"]
+			serverSocket.send(bytes(state["username"],"utf-8"))   #username send
 			password = input("Choose a password: ")
 			serverSocket.recv(1024)
 			serverSocket.send(bytes(password, "utf-8"))     #password send
@@ -90,6 +99,7 @@ def serverListen(serverSocket):
 			with state["inputCondition"]:
 				state["inputCondition"].wait()
 			state["inputMessage"] = True
+			state["username"]=state["userInput"]
 			serverSocket.send(bytes(state["userInput"],"utf-8"))   #username send
 			# print('\nclient1reggggggg')
 			password = input("Enter a password: ")
@@ -215,6 +225,33 @@ def serverListen(serverSocket):
 			else:
 				print("something wrong!")
 			command(serverSocket)
+		elif msg == "/request_get_DC":
+			print('\nclient_request_get_DC')  
+			serverSocket.send(bytes(state["username"],"utf-8"))    
+			serverSocket.recv(1024)
+			serverSocket.send(str(state["pup_k"]).encode('utf-8'))
+			#serverSocket.send(bytes(state["pup_k"],"utf-8"))
+			massege=serverSocket.recv(1024)
+			print(massege)
+			break
+		elif msg == "/show_request_DC":
+			print('\nclientCA_show_request_DC')  
+			serverSocket.send(b"/WAITING THE REQUESTS")  
+			requests=serverSocket.recv(1024)
+			for username in requests.keys():
+				print(f"{username}:{requests[username].get('user_pupk')}:{requests[username].get('mathm')}:{requests[username].get('solv')}\n")
+			username_re=input("enter username you want to send varify  or enter /0 to break")
+			serverSocket.send(username_re)
+			if username_re=="/0":
+				break
+			else:
+				mathm=serverSocket.recv(1024) 
+				mathm=input("enter the moadala you want proff to solve :")
+				serverSocket.send(bytes(mathm, "utf-8"))
+				serverSocket.recv(1024)
+				solv=input("enter the correct solve  :") 
+				serverSocket.send(bytes(solv, "utf-8")) 
+			break
 		else:
 			command(serverSocket)
 
@@ -270,7 +307,7 @@ def main():
 	# Send client's public key to the server
 	client_public_key_bytes = private_key.pubkey
 	serverSocket.send(str(client_public_key_bytes).encode('utf-8'))
-
+	state["pup_k"]=client_public_key_bytes
 	# Receive server's public key
 	server_public_key_bytes = serverSocket.recv(4096)
 
