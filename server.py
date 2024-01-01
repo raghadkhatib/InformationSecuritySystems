@@ -19,6 +19,7 @@ USER_CREDENTIALS_FILE = "user_credentials.txt"
 USER_info_FILE = "user_info.txt"
 DC_requests_FILE = "DC_requests.txt"
 USER_PROJECTS_FILE = "user_projects.txt"
+USER_MARKS_FILE = "user_marks.txt"
 user_credentials = {}
 DC_requests = {}
 state = {}
@@ -78,14 +79,15 @@ def load_or_generate_private_key():
 
 def save_user_credentials():
     with open(USER_CREDENTIALS_FILE, "w") as file:
-        #  for username, password,id_number in user_credentials.items():
-        # print(user_credentials.values())
-        # print(user_credentials.items())
         for username in user_credentials.keys():
             file.write(
                 f"{username}:{user_credentials[username].get('password')}:{user_credentials[username].get('id_number')}:{user_credentials[username].get('userRole')},,\n")
 
-
+def save_user_marks(client_ip, data):
+    with open(USER_MARKS_FILE, "w") as file:
+            file.write(
+                f"{client_ip}:{data}")
+            
 def serverListen(clientSocket):
     global userRole
     load_user_credentials()
@@ -104,10 +106,9 @@ def serverListen(clientSocket):
                 state["username"] = username
                 clientSocket.send(b"/loginSuccess")
                 clientSocket.recv(1024).decode("utf-8")
-                clientSocket.send(bytes(user_credentials[username].get('id_number'), "utf-8"))
-                #clientSocket.recv(1024).decode("utf-8")
-                #clientSocket.send(bytes(user_credentials[username].get('userRole'), "utf-8"))
-                break
+                clientSocket.send(bytes(str(user_credentials[username].get('id_number')) , 'utf-8'))
+                clientSocket.recv(1024).decode("utf-8")
+                clientSocket.send(bytes(str(user_credentials[username].get('userRole')) , 'utf-8'))
             else:
                 clientSocket.send(b"/loginFailed")
         elif msg == "/register":
@@ -170,7 +171,9 @@ def serverListen(clientSocket):
         elif msg == "/manage_projects":
             print('server12pro', msg)
             clientSocket.send(b"/manage_projects")
-            client_ip = str(clientSocket.getpeername()[0])
+            client_info = clientSocket.recv(1024).decode("utf-8")
+            clientSocket.send(b"\done")
+            client_ip = str(clientSocket.getpeername()[0]+client_info)
             print(session[client_ip])
             print(len(session[client_ip]))
             cipher_projects = clientSocket.recv(1024)
@@ -192,6 +195,9 @@ def serverListen(clientSocket):
             clientSocket.send(nonce)
         elif msg == "/session":
             print("before rec")
+            client_info = clientSocket.recv(1024).decode("utf-8")
+            clientSocket.send(b"\done")
+            # print("after:" , client_info)
             # Receive the encrypted session key from the client
             encrypted_session_key = clientSocket.recv(4096).decode("utf-8")
             encrypted_session_key = base64.b64decode(encrypted_session_key)
@@ -199,12 +205,10 @@ def serverListen(clientSocket):
             print("before dec: ", private_key, "\n", encrypted_session_key)
             # Decrypt the session key using the server's private key
             session_key = pgpy_decrypt(private_key, encrypted_session_key)
-            # print(len(session_key))
-            # print(type(session_key))
             print("session is:  ", session_key)
             # Send confirmation to the client
             clientSocket.send(b"Session key received and agreed.")
-            client_ip = str(clientSocket.getpeername()[0])
+            client_ip = str(clientSocket.getpeername()[0]+client_info)
             session[client_ip] = session_key
             print(session)
         elif msg == "/add-students-menu":
@@ -229,7 +233,9 @@ def serverListen(clientSocket):
             public_key = get_client_public_key(str(clientSocket.getpeername()[0])+first_key)
             is_verified = public_key.verify(grades_str.encode('utf-8'), signature)
             if is_verified:
+                save_user_marks(list_str , grades_str)
                 print("Signature verified successfully")
+                clientSocket.send(b"\done")
             else:
                 print("Signature verification failed")
         elif msg == "/request_get_DC":
@@ -262,6 +268,8 @@ def serverListen(clientSocket):
             save_DC_requests()
 
 
+        else:
+            clientSocket.send(b"\none")
 
 def user_info(phone, email):
     with open(USER_info_FILE, "a") as file:
@@ -313,7 +321,7 @@ def main():
     listenSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     listenSocket.bind((sys.argv[1], int(sys.argv[2])))
     listenSocket.listen(10)
-    print("PyconChat Server running")
+    print("UniSite Server running")
 
     # Load or generate the private key 
     load_or_generate_private_key()
