@@ -39,6 +39,7 @@ def load_user_credentials():
                 user_credentials[username] = {'password': password, 'id_number': id_number , 'userRole':userRole}
 
 def load_DC_requests():
+    ##DC_requests = {}
     if os.path.exists(DC_requests_FILE):
         with open(DC_requests_FILE, "r") as file:
             #lines = file.readlines()
@@ -49,7 +50,7 @@ def load_DC_requests():
             xx = lines.split(",,")
             print(xx)
             for one in xx:
-                if one =="\n":
+                if one =="\n" or one=="['']":
                     print("bbbbbbbbbbbbb")
                     break
                 else:
@@ -81,7 +82,7 @@ def save_user_credentials():
     with open(USER_CREDENTIALS_FILE, "w") as file:
         for username in user_credentials.keys():
             file.write(
-                f"{username}:{user_credentials[username].get('password')}:{user_credentials[username].get('id_number')}:{user_credentials[username].get('userRole')},,\n")
+                f"{username}:{user_credentials[username].get('password')}:{user_credentials[username].get('id_number')}:{user_credentials[username].get('userRole')}")
 
 def save_user_marks(client_ip, data):
     with open(USER_MARKS_FILE, "w") as file:
@@ -238,7 +239,7 @@ def serverListen(clientSocket):
                 clientSocket.send(b"\done")
             else:
                 print("Signature verification failed")
-        elif msg == "/request_get_DC":
+        elif msg == "/request_get_DC":                 ## add & save proff csr to DC_requestS
             print('server12DC', msg)
             load_DC_requests()
             clientSocket.send(b"/request_get_DC")
@@ -247,12 +248,17 @@ def serverListen(clientSocket):
             user_pupk = clientSocket.recv(1024).decode("utf-8")
             message = DC_request(username,user_pupk)    
             clientSocket.send(bytes(message, "utf-8"))
-        elif msg == "/my_request_state":
+        elif msg == "/my_request_state":                     ## send csr state to proff and verify
             print('server12', msg)
             load_DC_requests()
             clientSocket.send(b"/my_request_state")
-            username = clientSocket.recv(1024).decode("utf-8")
-            quest=DC_requests[username].get('mathm')
+            name = clientSocket.recv(1024).decode("utf-8")
+            print(name)
+            print(name)
+            print(name)
+            print(name)
+            quest=DC_requests[name].get('mathm')     
+            print(quest)
             if quest==None:
                 clientSocket.send(bytes("/waiting", "utf-8"))
             else:
@@ -266,14 +272,13 @@ def serverListen(clientSocket):
                 
 
 
-        elif msg == "/show_request_DC":
+        elif msg == "/show_request_DC":       ##send csr to CA 
             load_DC_requests()
             print('server12S_DC', msg)
             clientSocket.send(b"/show_request_DC")
             clientSocket.recv(1024)
             req=str(DC_requests)
             clientSocket.send(str(req).encode('utf-8'))
-            #clientSocket.send(bytes(req, "utf-8"))
             respo=clientSocket.recv(1024).decode("utf-8")
             if respo=="/0":
                 break
@@ -283,7 +288,7 @@ def serverListen(clientSocket):
             solv1=clientSocket.recv(1024).decode("utf-8")
             pupk=DC_requests[respo].get('user_pupk')
             print(mathm1)
-            DC_requests[respo]={'user_pupk': pupk,"mathm":mathm1,"solv":solv1}
+            DC_requests[respo]={'user_pupk': pupk,'mathm':mathm1,'solv':solv1}
             save_DC_requests()
 
 
@@ -297,7 +302,7 @@ def user_info(phone, email):
 
 def DC_request(username,user_pupk):
     if username not in DC_requests:
-        DC_requests[username] = {'user_pupk': user_pupk,"mathm":None,"solv":None}
+        DC_requests[username] = {'user_pupk': user_pupk,'mathm':None,'solv':None}
         save_DC_requests()
         return "\nyour request send to CA successfuly "
     else:

@@ -72,7 +72,6 @@ def serverListen(serverSocket):
 		msg = serverSocket.recv(1024).decode("utf-8")
 		print("---", msg)
 		if msg == "/login":
-			# print('\nclient1log')
 			print("Please Enter your username:")
 			with state["inputCondition"]:
 				state["inputCondition"].wait()
@@ -97,7 +96,6 @@ def serverListen(serverSocket):
 			else:
 				print("Login failed. Please try again.")
 		elif msg == "/register":
-			# print('\nclient12reg')  
 			state["inputMessage"] = False
 			print("Please enter the username:  ")
 			with state["inputCondition"]:
@@ -105,7 +103,6 @@ def serverListen(serverSocket):
 			state["inputMessage"] = True
 			state["username"]=state["userInput"]
 			serverSocket.send(bytes(state["userInput"],"utf-8"))   #username send
-			# print('\nclient1reggggggg')
 			password = input("Enter a password: ")
 			serverSocket.recv(1024)
 			serverSocket.send(bytes(password, "utf-8"))
@@ -229,17 +226,17 @@ def serverListen(serverSocket):
 			else:
 				print("something wrong!")
 			command(serverSocket)
-		elif msg == "/request_get_DC":
+		elif msg == "/request_get_DC":                      ## proffesor send certificat sign request (username ,puplic key)
 			print('\nclient_request_get_DC')  
 			serverSocket.send(bytes(state["username"],"utf-8"))    
 			serverSocket.recv(1024)
 			serverSocket.send(str(state["pup_k"]).encode('utf-8'))
-			#serverSocket.send(bytes(state["pup_k"],"utf-8"))
 			massege=serverSocket.recv(1024)
 			print(massege)
-			break
-		elif msg == "/my_request_state":
+			command(serverSocket)
+		elif msg == "/my_request_state":               ## proffesor show csr state and solve CA question to verify
 			print('\nclient_my_request_state')  
+			print(state["username"])
 			serverSocket.send(bytes(state["username"],"utf-8"))    
 			respon=serverSocket.recv(1024).decode('utf-8')
 			if respon=="/waiting":
@@ -253,7 +250,7 @@ def serverListen(serverSocket):
 				print(resp)
 
 			break
-		elif msg == "/show_request_DC":
+		elif msg == "/show_request_DC":               ## CA show csr and add question to verify
 			print('\nclientCA_show_request_DC')  
 			serverSocket.send(b"/WAITING THE REQUESTS")  
 			requests=serverSocket.recv(8600).decode('utf-8')
