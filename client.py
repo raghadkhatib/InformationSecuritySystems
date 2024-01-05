@@ -6,7 +6,7 @@ import sys
 import os
 from io import BytesIO
 from Crypto.Cipher import AES
-from datetime import datetime
+from datetime import datetime, timedelta    ##
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -16,6 +16,10 @@ from pgpy import PGPKey
 from hyper import (Hyper , pgpy_decrypt , pgpy_encrypt)
 import pgpy
 import base64
+import ipaddress     ##
+from cryptography import x509
+from cryptography.x509.oid import NameOID
+from cryptography.hazmat.primitives import hashes
 
 state = {}
 sission = {}
@@ -45,7 +49,9 @@ def command(serverSocket):
 		if state["userRole"] == 0:
 			print("/5 -> show my request state to get DC  \n")
 		if state["userRole"] == 2:
-			print("/6 -> show request to get DC \n")
+			print("/7 -> show request to get DC \n")
+		if state["userRole"] == 2:
+			print("/8 -> give certificat \n")
 		choose = input("choose: ")
 		if choose =="/1":
 			serverSocket.send(b"/add_info")
@@ -57,9 +63,11 @@ def command(serverSocket):
 			serverSocket.send(b"/request_get_DC")
 		elif choose =="/5":
 			serverSocket.send(b"/my_request_state")
-		elif choose =="/6":
+		elif choose =="/7":
 			serverSocket.send(b"/show_request_DC")
-		elif choose == "/7":
+		elif choose =="/8":
+			serverSocket.send(b"/give_certificat")
+		elif choose == "/6":
 			serverSocket.shutdown(socket.SHUT_RDWR)
 			serverSocket.close()
 			print("Disconnected from UniSite.")
@@ -248,13 +256,12 @@ def serverListen(serverSocket):
 				serverSocket.send(bytes(answe, "utf-8")) 
 				resp=serverSocket.recv(1024).decode('utf-8')
 				print(resp)
-
 			break
 		elif msg == "/show_request_DC":               ## CA show csr and add question to verify
 			print('\nclientCA_show_request_DC')  
 			serverSocket.send(b"/WAITING THE REQUESTS")  
 			requests=serverSocket.recv(8600).decode('utf-8')
-			print(requests)
+			#print(requests)
 			print(f"Converted string: {requests}")
 			#for username in requests.keys():
 				#print("usernamerrr:",{username},requests[username].get('user_pupk'),requests[username].get('mathm'),requests[username].get('solv')+"\n")
@@ -262,6 +269,7 @@ def serverListen(serverSocket):
 			username_re=input("enter username you want to send varify  or enter /0 to break")
 			serverSocket.send(username_re.encode('utf-8'))
 			if username_re=="/0":
+				command(serverSocket)    ###
 				break
 			else:
 				serverSocket.recv(1024) 
@@ -270,7 +278,23 @@ def serverListen(serverSocket):
 				serverSocket.recv(1024)
 				solv=input("enter the correct solve  :") 
 				serverSocket.send(bytes(solv, "utf-8")) 
+				command(serverSocket)
 			break
+		elif msg == "/give_certificat":               ## CA give certificat to prof 
+			serverSocket.send(b"/WAITING THE REQUESTS")  
+			requests=serverSocket.recv(8600).decode('utf-8')
+			print(requests)
+			username_re=input("enter username you want to give certificat")
+			serverSocket.send(username_re.encode('utf-8'))
+			pup=serverSocket.recv(1024).decode('utf-8')
+			timestamp = datetime.utcnow()
+			cert_data = username_re+pup
+			print(cert_data)
+			cert = private_key.sign(cert_data, timestamp=timestamp)
+			print(cert)
+			serverSocket.send(str(cert).encode('utf-8'))
+			serverSocket.recv(1024)
+			serverSocket.send(str(state["pup_k"]).encode('utf-8'))
 		else:
 			command(serverSocket)
 

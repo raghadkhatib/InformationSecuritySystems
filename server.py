@@ -15,13 +15,15 @@ from hyper import (Hyper, pgpy_decrypt, pgpy_encrypt)
 import pgpy
 import base64
 
-USER_CREDENTIALS_FILE = "user_credentials.txt"
+USER_CREDENTIALS_FILE = "user_credentials.txt"   
 USER_info_FILE = "user_info.txt"
 DC_requests_FILE = "DC_requests.txt"
+certificats_FILE = "certificats.txt"
 USER_PROJECTS_FILE = "user_projects.txt"
 USER_MARKS_FILE = "user_marks.txt"
 user_credentials = {}
 DC_requests = {}
+certificats = {}
 state = {}
 session = {}
 global private_key
@@ -56,14 +58,36 @@ def load_DC_requests():
                 else:
                     print(one)
                     print("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
-                    username, user_pupk,mathm,solv = one.split(":")
-                    DC_requests[username] = {'user_pupk': user_pupk, 'mathm': mathm, 'solv': solv}
+                    username, user_pupk,mathm,solv,ver = one.split(":")
+                    DC_requests[username] = {'user_pupk': user_pupk, 'mathm': mathm, 'solv': solv, 'verify': ver}
+
+def load_certificats_FILE():                     ############dont se yet
+    if os.path.exists(certificats_FILE):
+        with open(certificats_FILE, "r") as file:
+            lines = file.read()
+            xx = lines.split(",,")
+            print(xx)
+            for one in xx:
+                if one =="\n" or one=='':
+                    print("bbbbbbbbbbbbb")
+                    break
+                else:
+                    print(one)
+                    print("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
+                    username, cert,CA_pup = one.split(":")
+                    certificats[username] = {'cert': cert, 'CA_pup': CA_pup}
+
+def save_certificats():
+    with open(certificats_FILE, "w") as file:
+        for username in certificats.keys():
+            file.write(
+                f"{username}:{certificats[username].get('cert')}:{certificats[username].get('CA_pup')},,")
 
 def save_DC_requests():
     with open(DC_requests_FILE, "w") as file:
         for username in DC_requests.keys():
             file.write(
-                f"{username}:{DC_requests[username].get('user_pupk')}:{DC_requests[username].get('mathm')}:{DC_requests[username].get('solv')},,\n")
+                f"{username}:{DC_requests[username].get('user_pupk')}:{DC_requests[username].get('mathm')}:{DC_requests[username].get('solv')}:{DC_requests[username].get('verify')},,\n")
 
 
 def load_or_generate_private_key():
@@ -255,8 +279,6 @@ def serverListen(clientSocket):
             name = clientSocket.recv(1024).decode("utf-8")
             print(name)
             print(name)
-            print(name)
-            print(name)
             quest=DC_requests[name].get('mathm')     
             print(quest)
             if quest==None:
@@ -264,14 +286,15 @@ def serverListen(clientSocket):
             else:
                 clientSocket.send(bytes(quest, "utf-8"))
                 answe=clientSocket.recv(1024).decode("utf-8")
-                if answe==DC_requests[username].get('solv'):
+                if answe==DC_requests[name].get('solv'):
                     clientSocket.send(b"/verify done ")
+                    pupk=DC_requests[name].get('user_pupk')
+                    DC_requests[name]={'user_pupk': pupk,'mathm':quest,'solv':answe,'verify':"yes"}
+                    save_DC_requests()
                     ###########give dc
                 else:
                     clientSocket.send(b"/verify failed try again")
                 
-
-
         elif msg == "/show_request_DC":       ##send csr to CA 
             load_DC_requests()
             print('server12S_DC', msg)
@@ -288,9 +311,22 @@ def serverListen(clientSocket):
             solv1=clientSocket.recv(1024).decode("utf-8")
             pupk=DC_requests[respo].get('user_pupk')
             print(mathm1)
-            DC_requests[respo]={'user_pupk': pupk,'mathm':mathm1,'solv':solv1}
+            DC_requests[respo]={'user_pupk': pupk,'mathm':mathm1,'solv':solv1,'verify':None}
             save_DC_requests()
-
+        elif msg == "/give_certificat":                 ## add & save proff csr to DC_requestS
+            print('server12DC', msg)
+            load_DC_requests()
+            clientSocket.send(b"/give_certificat")
+            clientSocket.recv(1024)
+            req=str(DC_requests)
+            clientSocket.send(str(req).encode('utf-8'))
+            usname=clientSocket.recv(1024).decode("utf-8")
+            pupk=DC_requests[usname].get('user_pupk')
+            clientSocket.send(bytes(pupk, "utf-8"))
+            cert=clientSocket.recv(1024).decode("utf-8")
+            clientSocket.send(b"send ca pupk")
+            ca_pup=clientSocket.recv(1024).decode("utf-8")
+            add_certificat(usname,cert,ca_pup)
 
         else:
             clientSocket.send(b"\none")
@@ -302,11 +338,16 @@ def user_info(phone, email):
 
 def DC_request(username,user_pupk):
     if username not in DC_requests:
-        DC_requests[username] = {'user_pupk': user_pupk,'mathm':None,'solv':None}
+        DC_requests[username] = {'user_pupk': user_pupk,'mathm':None,'solv':None,'verify':None}
         save_DC_requests()
         return "\nyour request send to CA successfuly "
     else:
         return "you have send a request before."
+    
+def add_certificat(usname,cert,ca_pup):
+    with open(certificats_FILE, "a") as file:
+        file.write(f"{usname}:{cert}:{ca_pup},,")
+        #file.close()
 
 def user_projects(projects):
     with open(USER_PROJECTS_FILE, "a") as file:
