@@ -31,6 +31,7 @@ private_key = None
 client_public_keys = {}
 global client_count
 client_count = 0
+mark={}
 
 def load_user_credentials():
     if os.path.exists(USER_CREDENTIALS_FILE):
@@ -101,10 +102,21 @@ def save_user_credentials():
             file.write(
                 f"{username}:{user_credentials[username].get('password')}:{user_credentials[username].get('id_number')}:{user_credentials[username].get('userRole')}")
 
+def load_user_marks_file():                    
+    if os.path.exists(USER_MARKS_FILE):
+        with open(USER_MARKS_FILE, "r") as file:
+            xx = file.readlines()
+            i=0
+            for one in xx:
+                i+=1
+                client_ip, data,nn= one.split("::")
+                mark[i] = data
+                print(mark[i])
+
 def save_user_marks(client_ip, data):
-    with open(USER_MARKS_FILE, "w") as file:
+    with open(USER_MARKS_FILE, "a") as file:     # a 
             file.write(
-                f"{client_ip}:{data}")
+                f"{client_ip}::{data}::\n")
             
 def serverListen(clientSocket):
     global userRole
@@ -347,10 +359,35 @@ def serverListen(clientSocket):
             is_verified = blic_key.verify(cert_data_str, signature)
             ##
             if is_verified:
-                print("Signature verified successfully")
-                clientSocket.send(b"\done")
+                print("certificat Signature verified successfully")
+                clientSocket.send(b"\certificat Signature verified successfully")
+                clientSocket.recv(1024)
+                load_user_marks_file()
+                certdata={}
+                certdata=ast.literal_eval(certificats[usernam].get('cert_data'))
+                print(certdata)
+                authn=certdata[usernam].get('auth')
+                if authn=='/0':
+                    clientSocket.send(b"you have authantcat to see all mark")
+                    clientSocket.recv(1024)
+                    clientSocket.send(str(mark).encode('utf-8'))
+                else:
+                    clientSocket.send(b"you have authantcat to see only one subject mark")
+                    clientSocket.recv(1024)
+                    marksen={}
+                    #data_str = str(mark)
+                    #markkk=ast.literal_eval(data_str)
+                    for list in mark.keys():
+                        #sss=mark[list]
+                        print(mark[list])
+                        #markkk={}
+                        markkk=ast.literal_eval(str(mark[list]))
+                        if markkk['subject_name']==authn:
+                            marksen[list]=mark[list]
+                    clientSocket.send(str(marksen).encode('utf-8'))
             else:
-                print("Signature verification failed")
+                print("certificat verification failed")
+                clientSocket.send(b"\certificat verification failed")
 
         else:
             clientSocket.send(b"\none")

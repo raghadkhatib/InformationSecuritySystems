@@ -301,14 +301,8 @@ def serverListen(serverSocket):
 				auth="all"
 			else:
 				auth=subject
-			#serverSocket.send(bytes(subject, "utf-8")) 
 			cert_data[username_re] = {'user_pupk': pup,'auth':subject, 'CA_name': state["username"]}
-			#cert_data["username"] = username_re
-			#cert_data["user_pupk"] = pup
-			#cert_data["auth"] = subject
-			#cert_data["CA_name"] = state["username"]
 			cert_data_str = str(cert_data)
-			#cert_data = username_re+pup
 			print(cert_data)
 			print(cert_data_str)
 			cert = private_key.sign(cert_data_str.encode('utf-8'), timestamp=timestamp)
@@ -333,6 +327,13 @@ def serverListen(serverSocket):
 			###
 			respon=serverSocket.recv(1024).decode('utf-8')
 			print(respon)
+			if respon!="\certificat verification failed":
+				serverSocket.send(b"/ciperreseve2") 
+				authn=serverSocket.recv(1024).decode('utf-8')
+				print(authn)
+				serverSocket.send(b"/ciperreseve2") 
+				mark=serverSocket.recv(1024).decode('utf-8')
+				print(mark)
 		else:
 			command(serverSocket)
 
