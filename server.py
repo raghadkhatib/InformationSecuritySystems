@@ -262,7 +262,7 @@ def serverListen(clientSocket):
             clientSocket.send(b"/request_get_DC")
             username = clientSocket.recv(1024).decode("utf-8")
             clientSocket.send(b"/sendkeyyyy")
-            user_pupk = clientSocket.recv(1024).decode("utf-8")
+            user_pupk = clientSocket.recv(4096).decode("utf-8")
             message = DC_request(username,user_pupk)    
             clientSocket.send(bytes(message, "utf-8"))
         elif msg == "/my_request_state":                     ## send csr state to proff and verify
@@ -314,11 +314,11 @@ def serverListen(clientSocket):
             usname=clientSocket.recv(1024).decode("utf-8")
             pupk=DC_requests[usname].get('user_pupk')
             clientSocket.send(bytes(pupk, "utf-8"))
-            cert=clientSocket.recv(4096).decode("utf-8")
+            cert=clientSocket.recv(8600).decode("utf-8")
             clientSocket.send(b"send ca pupk")
-            ca_pup=clientSocket.recv(1024).decode("utf-8")  ##
+            ca_pup=clientSocket.recv(4096).decode("utf-8")  ##
             clientSocket.send(b"send cert data bytes")
-            cert_data=clientSocket.recv(4096).decode("utf-8")
+            cert_data=clientSocket.recv(8600).decode("utf-8")
             print(cert_data)
             add_certificat(usname,cert,cert_data,ca_pup)
         elif msg == "/get_mark":

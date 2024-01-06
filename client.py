@@ -294,7 +294,7 @@ def serverListen(serverSocket):
 			print(requests)
 			username_re=input("enter username you want to give certificat")
 			serverSocket.send(username_re.encode('utf-8'))
-			pup=serverSocket.recv(1024).decode('utf-8')
+			pup=serverSocket.recv(4096).decode('utf-8')
 			timestamp = datetime.utcnow()
 			subject = input("enter subject name you want to Authantication or press /0 to get all  Authantication: ")
 			if subject=='/0':
