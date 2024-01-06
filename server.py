@@ -100,7 +100,7 @@ def save_user_credentials():
     with open(USER_CREDENTIALS_FILE, "w") as file:
         for username in user_credentials.keys():
             file.write(
-                f"{username}:{user_credentials[username].get('password')}:{user_credentials[username].get('id_number')}:{user_credentials[username].get('userRole')}")
+                f"{username}:{user_credentials[username].get('password')}:{user_credentials[username].get('id_number')}:{user_credentials[username].get('userRole')}\n")
 
 def load_user_marks_file():                    
     if os.path.exists(USER_MARKS_FILE):
