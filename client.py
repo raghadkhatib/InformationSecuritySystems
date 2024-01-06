@@ -241,7 +241,7 @@ def serverListen(serverSocket):
 			serverSocket.send(str(state["pup_k"]).encode('utf-8'))
 			massege=serverSocket.recv(1024)
 			print(massege)
-			command(serverSocket)
+			##########command(serverSocket)
 		elif msg == "/my_request_state":               ## proffesor show csr state and solve CA question to verify
 			print('\nclient_my_request_state')  
 			print(state["username"])
@@ -278,7 +278,7 @@ def serverListen(serverSocket):
 				serverSocket.recv(1024)
 				solv=input("enter the correct solve  :") 
 				serverSocket.send(bytes(solv, "utf-8")) 
-				command(serverSocket)
+				########command(serverSocket)
 			break
 		elif msg == "/give_certificat":               ## CA creat certificat and give authentication
 			serverSocket.send(b"/WAITING THE REQUESTS")  
@@ -295,10 +295,11 @@ def serverListen(serverSocket):
 			else:
 				auth=subject
 			#serverSocket.send(bytes(subject, "utf-8")) 
-			cert_data["username"] = username_re
-			cert_data["user_pupk"] = pup
-			cert_data["auth"] = subject
-			cert_data["CA_name"] = state["username"]
+			cert_data[username_re] = {'user_pupk': pup,'auth':subject, 'CA_name': state["username"]}
+			#cert_data["username"] = username_re
+			#cert_data["user_pupk"] = pup
+			#cert_data["auth"] = subject
+			#cert_data["CA_name"] = state["username"]
 			cert_data_str = str(cert_data)
 			#cert_data = username_re+pup
 			print(cert_data)
@@ -310,7 +311,7 @@ def serverListen(serverSocket):
 			serverSocket.send(str(state["pup_k"]).encode('utf-8'))
 			##
 			serverSocket.recv(1024)
-			serverSocket.send(bytes(cert_data_str, 'utf-8'))
+			serverSocket.send(str(cert_data).encode('utf-8'))
 		else:
 			command(serverSocket)
 
