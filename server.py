@@ -375,16 +375,16 @@ def serverListen(clientSocket):
                     clientSocket.send(b"you have authantcat to see only one subject mark")
                     clientSocket.recv(1024)
                     marksen={}
-                    #data_str = str(mark)
-                    #markkk=ast.literal_eval(data_str)
-                    for list in mark.keys():
-                        #sss=mark[list]
-                        print(mark[list])
-                        #markkk={}
-                        markkk=ast.literal_eval(str(mark[list]))
-                        if markkk['subject_name']==authn:
-                            marksen[list]=mark[list]
-                    clientSocket.send(str(marksen).encode('utf-8'))
+                    data_str = str(mark)
+                    markkk=ast.literal_eval(data_str)
+                    # for list in mark.keys():
+                    #     #sss=mark[list]
+                    #     print(mark[list])
+                    #     #markkk={}
+                    #     markkk=ast.literal_eval(str(mark[list]))
+                    #     if markkk['subject_name']==authn:
+                    #         marksen[list]=mark[list]
+                    # clientSocket.send(str(marksen).encode('utf-8'))
             else:
                 print("certificat verification failed")
                 clientSocket.send(b"\certificat verification failed")

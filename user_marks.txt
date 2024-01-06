@@ -1,3 +1,5 @@
 {'1': 1}::{'subject_name': 'math', 'rad': '30', 'r2': '24', 'time': datetime.datetime(2024, 1, 6, 18, 29, 39, 960924)}::
 {'1': 1}::{'subject_name': 'e', 'r': '12', 'rr': '44', 'tt': '34', 'time': datetime.datetime(2024, 1, 6, 18, 46, 27, 556552)}::
 {'1': 1}::{'subject_name': 'e', 'tt': '66', 'jj': '88', 'time': datetime.datetime(2024, 1, 6, 18, 51, 9, 315574)}::
+{'1': 1}::{'subject_name': 'iss', 'k99': '100', 'time': datetime.datetime(2024, 1, 6, 21, 48, 29, 695470)}::
+{'1': 1}::{'subject_name': 'iss', 'isss': '100', 'time': datetime.datetime(2024, 1, 6, 22, 3, 15, 855627)}::
