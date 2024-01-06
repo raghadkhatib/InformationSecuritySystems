@@ -221,7 +221,8 @@ def serverListen(serverSocket):
 				grade = input(f"Enter grade for {student_name}: ")
 				grades[student_name] = grade
 			timestamp = datetime.utcnow()
-			grades["time"] = timestamp
+			ttt=str(timestamp)      ################raghad edit
+			grades["time"] = ttt                  ##########3###raghad edit
 			grades_str = str(grades)
 			client_info[client_ip] = client_list
 			print("this ------", timestamp)

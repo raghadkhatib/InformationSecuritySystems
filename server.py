@@ -377,13 +377,13 @@ def serverListen(clientSocket):
                     marksen={}
                     #data_str = str(mark)
                     #markkk=ast.literal_eval(data_str)
-                    for list in mark.keys():
+                    for lis in mark.keys():
                         #sss=mark[list]
-                        print(mark[list])
+                        print(mark[lis])
                         #markkk={}
-                        markkk=ast.literal_eval(str(mark[list]))
+                        markkk=ast.literal_eval(str(mark[lis]))
                         if markkk['subject_name']==authn:
-                            marksen[list]=mark[list]
+                            marksen[lis]=mark[lis]
                     clientSocket.send(str(marksen).encode('utf-8'))
             else:
                 print("certificat verification failed")
