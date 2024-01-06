@@ -35,6 +35,8 @@ global client_list
 client_list = 0
 global client_ip
 client_ip = None
+certificats_FILE = "certificats.txt"
+mycertificats={}
 
 def command(serverSocket):
 	print("logg:   ",is_logged_in)
@@ -52,6 +54,8 @@ def command(serverSocket):
 			print("/7 -> show request to get DC \n")
 		if state["userRole"] == 2:
 			print("/8 -> give certificat \n")
+		if state["userRole"] == 0:
+			print("/9 -> show my subject marks \n")
 		choose = input("choose: ")
 		if choose =="/1":
 			serverSocket.send(b"/add_info")
@@ -67,6 +71,8 @@ def command(serverSocket):
 			serverSocket.send(b"/show_request_DC")
 		elif choose =="/8":
 			serverSocket.send(b"/give_certificat")
+		elif choose =="/9":
+			serverSocket.send(b"/get_mark")
 		elif choose == "/6":
 			serverSocket.shutdown(socket.SHUT_RDWR)
 			serverSocket.close()
@@ -99,6 +105,7 @@ def serverListen(serverSocket):
 				state["userRole"]=int(serverSocket.recv(1024).decode('utf-8'))
 				state["alive"] = True
 				is_logged_in = True
+				load_certificats_FILE()
 				print("Login successful!")
 				command(serverSocket)
 			else:
@@ -312,6 +319,20 @@ def serverListen(serverSocket):
 			##
 			serverSocket.recv(1024)
 			serverSocket.send(str(cert_data).encode('utf-8'))
+		elif msg == "/get_mark":               ## certificat use
+			print('\nclient_my_request_state')  
+			serverSocket.send(bytes(state["username"],"utf-8"))    
+			serverSocket.recv(1024)
+			certi=mycertificats[state["username"]].get('cert')
+			serverSocket.send(str(certi).encode('utf-8'))  
+			mass=serverSocket.recv(1024).decode('utf-8')
+			print(mass)
+			if mass=="error certificat wrong":
+				break
+			serverSocket.send(b"/ciperreseve2")   
+			###
+			respon=serverSocket.recv(1024).decode('utf-8')
+			print(respon)
 		else:
 			command(serverSocket)
 
@@ -337,6 +358,20 @@ def userInput(serverSocket):
 				state["inputCondition"].wait()
 		# if state["userInput"] == "/1" or state["userInput"] == "/2":
 		# 	serverSocket.send(state["userInput"].encode("utf-8"))			
+
+
+def load_certificats_FILE():             
+    if os.path.exists(certificats_FILE):
+        with open(certificats_FILE, "r") as file:
+            lines = file.read()
+            xx = lines.split(",,")
+            #print(xx)
+            for one in xx:
+                if one ==' ' or one=='':
+                    break
+                else:
+                    username, cert,cert_data,CA_pup = one.split("::")
+                    if username==state["username"]:mycertificats[username] = {'cert': cert,'cert_data':cert_data}
 
 def main():
 	if len(sys.argv) < 3:

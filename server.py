@@ -321,6 +321,33 @@ def serverListen(clientSocket):
             cert_data=clientSocket.recv(4096).decode("utf-8")
             print(cert_data)
             add_certificat(usname,cert,cert_data,ca_pup)
+        elif msg == "/get_mark":
+            clientSocket.send(b"/get_mark")
+            load_certificats_FILE()
+            usernam = clientSocket.recv(4024).decode("utf-8")
+            clientSocket.send(b"send cert")
+            certif = clientSocket.recv(4024).decode("utf-8")  
+            cert=certificats[usernam].get('cert')
+            if certif!=cert:
+                mass="error certificat wrong"
+                clientSocket.send(str(mass).encode('utf-8'))
+                break
+            else:
+                mass="cheking certificat now"
+                clientSocket.send(str(mass).encode('utf-8'))
+            clientSocket.recv(4096)
+            cert_data_str = str(certificats[usernam].get('cert_data'))
+            signature = pgpy.PGPSignature.from_blob(cert)
+            print("Signature:", signature)
+            ca_pupkey=certificats[usernam].get('CA_pup')
+            print(ca_pupkey)
+            is_verified = ca_pupkey.verify(cert_data_str, signature)
+            ##
+            if is_verified:
+                print("Signature verified successfully")
+                clientSocket.send(b"\done")
+            else:
+                print("Signature verification failed")
 
         else:
             clientSocket.send(b"\none")
