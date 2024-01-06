@@ -54,7 +54,7 @@ def load_DC_requests():
                     username, user_pupk,mathm,solv,ver = one.split(":")
                     DC_requests[username] = {'user_pupk': user_pupk, 'mathm': mathm, 'solv': solv, 'verify': ver}
 
-def load_certificats_FILE():                     ############not use yet
+def load_certificats_FILE():                    
     if os.path.exists(certificats_FILE):
         with open(certificats_FILE, "r") as file:
             lines = file.read()
@@ -316,7 +316,7 @@ def serverListen(clientSocket):
             clientSocket.send(bytes(pupk, "utf-8"))
             cert=clientSocket.recv(4096).decode("utf-8")
             clientSocket.send(b"send ca pupk")
-            ca_pup=clientSocket.recv(1024).decode("utf-8")
+            ca_pup=clientSocket.recv(1024).decode("utf-8")  ##
             clientSocket.send(b"send cert data bytes")
             cert_data=clientSocket.recv(4096).decode("utf-8")
             print(cert_data)
@@ -340,8 +340,11 @@ def serverListen(clientSocket):
             signature = pgpy.PGPSignature.from_blob(cert)
             print("Signature:", signature)
             ca_pupkey=certificats[usernam].get('CA_pup')
+            keyy=bytes(ca_pupkey,"utf-8")
+            blic_key = pgpy.PGPKey()
+            blic_key.parse(keyy.decode('utf-8'))
             print(ca_pupkey)
-            is_verified = ca_pupkey.verify(cert_data_str, signature)
+            is_verified = blic_key.verify(cert_data_str, signature)
             ##
             if is_verified:
                 print("Signature verified successfully")
