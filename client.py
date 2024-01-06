@@ -280,21 +280,37 @@ def serverListen(serverSocket):
 				serverSocket.send(bytes(solv, "utf-8")) 
 				command(serverSocket)
 			break
-		elif msg == "/give_certificat":               ## CA give certificat to prof 
+		elif msg == "/give_certificat":               ## CA creat certificat and give authentication
 			serverSocket.send(b"/WAITING THE REQUESTS")  
+			cert_data={}
 			requests=serverSocket.recv(8600).decode('utf-8')
 			print(requests)
 			username_re=input("enter username you want to give certificat")
 			serverSocket.send(username_re.encode('utf-8'))
 			pup=serverSocket.recv(1024).decode('utf-8')
 			timestamp = datetime.utcnow()
-			cert_data = username_re+pup
+			subject = input("enter subject name you want to Authantication or press /0 to get all  Authantication: ")
+			if subject=='/0':
+				auth="all"
+			else:
+				auth=subject
+			#serverSocket.send(bytes(subject, "utf-8")) 
+			cert_data["username"] = username_re
+			cert_data["user_pupk"] = pup
+			cert_data["auth"] = subject
+			cert_data["CA_name"] = state["username"]
+			cert_data_str = str(cert_data)
+			#cert_data = username_re+pup
 			print(cert_data)
-			cert = private_key.sign(cert_data, timestamp=timestamp)
+			print(cert_data_str)
+			cert = private_key.sign(cert_data_str.encode('utf-8'), timestamp=timestamp)
 			print(cert)
 			serverSocket.send(str(cert).encode('utf-8'))
 			serverSocket.recv(1024)
 			serverSocket.send(str(state["pup_k"]).encode('utf-8'))
+			##
+			serverSocket.recv(1024)
+			serverSocket.send(bytes(cert_data_str, 'utf-8'))
 		else:
 			command(serverSocket)
 

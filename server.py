@@ -52,7 +52,7 @@ def load_DC_requests():
             xx = lines.split(",,")
             print(xx)
             for one in xx:
-                if one =="\n" or one=="['']":
+                if one =="\n" or one=='':
                     print("bbbbbbbbbbbbb")
                     break
                 else:
@@ -61,7 +61,7 @@ def load_DC_requests():
                     username, user_pupk,mathm,solv,ver = one.split(":")
                     DC_requests[username] = {'user_pupk': user_pupk, 'mathm': mathm, 'solv': solv, 'verify': ver}
 
-def load_certificats_FILE():                     ############dont se yet
+def load_certificats_FILE():                     ############dont use yet
     if os.path.exists(certificats_FILE):
         with open(certificats_FILE, "r") as file:
             lines = file.read()
@@ -74,20 +74,20 @@ def load_certificats_FILE():                     ############dont se yet
                 else:
                     print(one)
                     print("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
-                    username, cert,CA_pup = one.split(":")
-                    certificats[username] = {'cert': cert, 'CA_pup': CA_pup}
+                    username, cert,cert_data,CA_pup = one.split(":")
+                    certificats[username] = {'cert': cert,'cert_data':cert_data, 'CA_pup': CA_pup}
 
 def save_certificats():
     with open(certificats_FILE, "w") as file:
         for username in certificats.keys():
             file.write(
-                f"{username}:{certificats[username].get('cert')}:{certificats[username].get('CA_pup')},,")
+                f"{username}:{certificats[username].get('cert')}:{certificats[username].get('cert_data')}:{certificats[username].get('CA_pup')},,")
 
 def save_DC_requests():
     with open(DC_requests_FILE, "w") as file:
         for username in DC_requests.keys():
             file.write(
-                f"{username}:{DC_requests[username].get('user_pupk')}:{DC_requests[username].get('mathm')}:{DC_requests[username].get('solv')}:{DC_requests[username].get('verify')},,\n")
+                f"{username}:{DC_requests[username].get('user_pupk')}:{DC_requests[username].get('mathm')}:{DC_requests[username].get('solv')}:{DC_requests[username].get('verify')},,")
 
 
 def load_or_generate_private_key():
@@ -289,7 +289,8 @@ def serverListen(clientSocket):
                 if answe==DC_requests[name].get('solv'):
                     clientSocket.send(b"/verify done ")
                     pupk=DC_requests[name].get('user_pupk')
-                    DC_requests[name]={'user_pupk': pupk,'mathm':quest,'solv':answe,'verify':"yes"}
+                    DC_requests.update({name:{'user_pupk': pupk,'mathm':quest,'solv':answe,'verify':"yes"}})
+                    #DC_requests[name]={'user_pupk': pupk,'mathm':quest,'solv':answe,'verify':"yes"}
                     save_DC_requests()
                     ###########give dc
                 else:
@@ -311,7 +312,8 @@ def serverListen(clientSocket):
             solv1=clientSocket.recv(1024).decode("utf-8")
             pupk=DC_requests[respo].get('user_pupk')
             print(mathm1)
-            DC_requests[respo]={'user_pupk': pupk,'mathm':mathm1,'solv':solv1,'verify':None}
+            DC_requests.update({respo:{'user_pupk': pupk,'mathm':mathm1,'solv':solv1,'verify':None}})
+            #DC_requests[respo]={'user_pupk': pupk,'mathm':mathm1,'solv':solv1,'verify':None}
             save_DC_requests()
         elif msg == "/give_certificat":                 ## add & save proff csr to DC_requestS
             print('server12DC', msg)
@@ -326,7 +328,9 @@ def serverListen(clientSocket):
             cert=clientSocket.recv(1024).decode("utf-8")
             clientSocket.send(b"send ca pupk")
             ca_pup=clientSocket.recv(1024).decode("utf-8")
-            add_certificat(usname,cert,ca_pup)
+            clientSocket.send(b"send cert data bytes")
+            cert_data=clientSocket.recv(1024).decode("utf-8")
+            add_certificat(usname,cert,ca_pup,cert_data)
 
         else:
             clientSocket.send(b"\none")
@@ -344,9 +348,9 @@ def DC_request(username,user_pupk):
     else:
         return "you have send a request before."
     
-def add_certificat(usname,cert,ca_pup):
+def add_certificat(usname,cert,ca_pup,cert_data):
     with open(certificats_FILE, "a") as file:
-        file.write(f"{usname}:{cert}:{ca_pup},,")
+        file.write(f"{usname}:{cert}:{cert_data}:{ca_pup},,")
         #file.close()
 
 def user_projects(projects):
