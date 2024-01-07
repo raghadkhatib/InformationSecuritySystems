@@ -63,11 +63,8 @@ def load_certificats_FILE():
             print(xx)
             for one in xx:
                 if one =="\n" or one=='':
-                    print("bbbbbbbbbbbbb")
                     break
                 else:
-                    print(one)
-                    print("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
                     username, cert,cert_data,CA_pup = one.split("::")
                     certificats[username] = {'cert': cert,'cert_data':cert_data, 'CA_pup': CA_pup}
 
@@ -111,7 +108,6 @@ def load_user_marks_file():
                 i+=1
                 client_ip, data,nn= one.split("::")
                 mark[i] = data
-                print(mark[i])
 
 def save_user_marks(client_ip, data):
     with open(USER_MARKS_FILE, "a") as file:     # a 
@@ -316,6 +312,7 @@ def serverListen(clientSocket):
             print(mathm1)
             DC_requests.update({respo:{'user_pupk': pupk,'mathm':mathm1,'solv':solv1,'verify':None}})
             save_DC_requests()
+            clientSocket.send(b"/mathm1 recive")
         elif msg == "/give_certificat":                 ## add & save proff csr to DC_requestS
             print('server12DC', msg)
             load_DC_requests()
@@ -333,6 +330,7 @@ def serverListen(clientSocket):
             cert_data=clientSocket.recv(8600).decode("utf-8")
             print(cert_data)
             add_certificat(usname,cert,cert_data,ca_pup)
+            clientSocket.send(b"send cert data bytes")
         elif msg == "/get_mark":
             clientSocket.send(b"/get_mark")
             load_certificats_FILE()
@@ -375,12 +373,8 @@ def serverListen(clientSocket):
                     clientSocket.send(b"you have authantcat to see only one subject mark")
                     clientSocket.recv(1024)
                     marksen={}
-                    #data_str = str(mark)
-                    #markkk=ast.literal_eval(data_str)
                     for lis in mark.keys():
-                        #sss=mark[list]
                         print(mark[lis])
-                        #markkk={}
                         markkk=ast.literal_eval(str(mark[lis]))
                         if markkk['subject_name']==authn:
                             marksen[lis]=mark[lis]

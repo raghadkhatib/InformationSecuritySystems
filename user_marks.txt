@@ -3,3 +3,4 @@
 {'1': 1}::{'subject_name': 'e', 'tt': '66', 'jj': '88', 'time': 'datetime.datetime(2024, 1, 6, 18, 51, 9, 315574)'}::
 {'1': 1}::{'subject_name': 'e', 'fff': '444', 'xx': '33', 'time': 'datetime.datetime(2024, 1, 6, 22, 7, 32, 280953)'}::
 {'1': 1}::{'subject_name': 'ath', 'dd': '33', 'ff': '44', 'time': '2024-01-06 22:11:18.419494'}::
+{'1': 1}::{'subject_name': 'math', 'ragha': '33', 'fat': '44', 'wase': '321', 'time': '2024-01-07 06:04:44.859489'}::

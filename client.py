@@ -249,14 +249,15 @@ def serverListen(serverSocket):
 			serverSocket.send(str(state["pup_k"]).encode('utf-8'))
 			massege=serverSocket.recv(1024)
 			print(massege)
-			##########command(serverSocket)
-		elif msg == "/my_request_state":               ## proffesor show csr state and solve CA question to verify
+			command(serverSocket)
+		elif msg == "/my_request_state":      ## proffesor show csr state and solve CA question to verify
 			print('\nclient_my_request_state')  
 			print(state["username"])
 			serverSocket.send(bytes(state["username"],"utf-8"))    
 			respon=serverSocket.recv(1024).decode('utf-8')
 			if respon=="/waiting":
 				print('\nyour request in process') 
+				command(serverSocket)
 			else:
 				print('\nanswer this question to verify:') 
 				print(respon) 
@@ -264,21 +265,17 @@ def serverListen(serverSocket):
 				serverSocket.send(bytes(answe, "utf-8")) 
 				resp=serverSocket.recv(1024).decode('utf-8')
 				print(resp)
+				command(serverSocket)
 			break
 		elif msg == "/show_request_DC":               ## CA show csr and add question to verify
 			print('\nclientCA_show_request_DC')  
 			serverSocket.send(b"/WAITING THE REQUESTS")  
 			requests=serverSocket.recv(8600).decode('utf-8')
-			#print(requests)
 			print(f"Converted string: {requests}")
-			#for username in requests.keys():
-				#print("usernamerrr:",{username},requests[username].get('user_pupk'),requests[username].get('mathm'),requests[username].get('solv')+"\n")
-				#print(f"{username}:{requests[username].get('user_pupk')}:{requests[username].get('mathm')}:{requests[username].get('solv')}\n")
 			username_re=input("enter username you want to send varify  or enter /0 to break")
 			serverSocket.send(username_re.encode('utf-8'))
 			if username_re=="/0":
 				command(serverSocket)    ###
-				break
 			else:
 				serverSocket.recv(1024) 
 				mathm=input("enter the moadala you want proff to solve :")
@@ -286,8 +283,8 @@ def serverListen(serverSocket):
 				serverSocket.recv(1024)
 				solv=input("enter the correct solve  :") 
 				serverSocket.send(bytes(solv, "utf-8")) 
-				########command(serverSocket)
-			break
+				serverSocket.recv(1024)
+				command(serverSocket)
 		elif msg == "/give_certificat":               ## CA creat certificat and give authentication
 			serverSocket.send(b"/WAITING THE REQUESTS")  
 			cert_data={}
@@ -314,6 +311,7 @@ def serverListen(serverSocket):
 			##
 			serverSocket.recv(1024)
 			serverSocket.send(str(cert_data).encode('utf-8'))
+			serverSocket.recv(1024)
 		elif msg == "/get_mark":               ## certificat use
 			print('\nclient_my_request_state')  
 			serverSocket.send(bytes(state["username"],"utf-8"))    
@@ -335,6 +333,7 @@ def serverListen(serverSocket):
 				serverSocket.send(b"/ciperreseve2") 
 				mark=serverSocket.recv(1024).decode('utf-8')
 				print(mark)
+				command(serverSocket)
 		else:
 			command(serverSocket)
 
