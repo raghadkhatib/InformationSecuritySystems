@@ -5,6 +5,7 @@ import pickle
 import os
 import sys
 import ast
+import hashlib
 from Crypto.Cipher import AES
 
 from cryptography.hazmat.primitives import serialization
@@ -96,8 +97,9 @@ def load_or_generate_private_key():
 def save_user_credentials():
     with open(USER_CREDENTIALS_FILE, "w") as file:
         for username in user_credentials.keys():
+            password = hashlib.sha256(user_credentials[username].get('password').encode()).hexdigest()
             file.write(
-                f"{username}:{user_credentials[username].get('password')}:{user_credentials[username].get('id_number')}:{user_credentials[username].get('userRole')}\n")
+                f"{username}:{password}:{user_credentials[username].get('id_number')}:{user_credentials[username].get('userRole')}\n")
 
 def load_user_marks_file():                    
     if os.path.exists(USER_MARKS_FILE):
@@ -109,10 +111,10 @@ def load_user_marks_file():
                 client_ip, data,nn= one.split("::")
                 mark[i] = data
 
-def save_user_marks(client_ip, data):
+def save_user_marks(client_ip, data, sign1):
     with open(USER_MARKS_FILE, "a") as file:     # a 
             file.write(
-                f"{client_ip}::{data}::\n")
+                f"{client_ip}::{data}::{sign1}::\n")
             
 def serverListen(clientSocket):
     global userRole
@@ -239,7 +241,19 @@ def serverListen(clientSocket):
             print(session)
         elif msg == "/add-students-menu":
             clientSocket.send(b"/add-students-menu")
-            data_received = clientSocket.recv(4024)  # Adjust the buffer size as needed
+            # data_received = clientSocket.recv(4024)  # Adjust the buffer size as needed
+            client_ip = str(clientSocket.getpeername()[0]+client_info)
+            print(session[client_ip])
+            print(len(session[client_ip]))
+            data_received = clientSocket.recv(1024)
+            clientSocket.send(b"/ciperreseve1")
+            tag = clientSocket.recv(1024)
+            clientSocket.send(b"/tagreseve1")
+            nonce = clientSocket.recv(1024)
+            cipher = AES.new(session[client_ip], AES.MODE_EAX, nonce=nonce)
+            data_received = cipher.decrypt_and_verify(data_received, tag).decode("utf-8")
+            data_received = str(data_received).encode('utf-8')
+            print(data_received)
             list_bytes, grades_bytes, signature_str = data_received.split(b'\n' , 2)
             list_str = list_bytes.decode('utf-8')
             grades_str = grades_bytes.decode('utf-8')
@@ -259,7 +273,7 @@ def serverListen(clientSocket):
             public_key = get_client_public_key(str(clientSocket.getpeername()[0])+first_key)
             is_verified = public_key.verify(grades_str.encode('utf-8'), signature)
             if is_verified:
-                save_user_marks(list_str , grades_str)
+                save_user_marks(list_str , grades_str , signature)
                 print("Signature verified successfully")
                 clientSocket.send(b"\done")
             else:
@@ -420,7 +434,12 @@ def register_user(username, password, id_number, userRole):
 
 
 def login_user(username, password):
-    return username in user_credentials and user_credentials[username].get('password') == password
+    # return username in user_credentials and user_credentials[username].get('password') == password
+    if username in user_credentials:
+        stored_password_hash = user_credentials[username].get('password')
+        input_password_hash = hashlib.sha256(password.encode()).hexdigest()
+        return stored_password_hash == input_password_hash
+    return False
 
 
 # Function to add a client's public key

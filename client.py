@@ -233,7 +233,16 @@ def serverListen(serverSocket):
 			signature_bytes = bytes(signature)
 			signature_str = base64.b64encode(signature_bytes).decode('utf-8')
 			data_to_send = client_bytes + b'\n' + grades_bytes + b'\n' +  signature_str.encode('utf-8')
-			serverSocket.send(data_to_send)
+			# serverSocket.send(data_to_send)
+			cipher = AES.new(session_key, AES.MODE_EAX)
+			ciphertext, tag = cipher.encrypt_and_digest(data_to_send)    # Projects encode
+			print("menu encode before send :")
+			nonce = cipher.nonce
+			serverSocket.send(ciphertext)
+			serverSocket.recv(1024)
+			serverSocket.send(tag)   
+			serverSocket.recv(1024)
+			serverSocket.send(nonce)
 			# print("Grades:", grades_str)
 			# print("Signature:", signature)
 			response = serverSocket.recv(1024).decode("utf-8")
