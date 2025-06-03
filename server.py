@@ -104,9 +104,13 @@ def save_user_credentials():
 def load_user_marks_file():                    
     if os.path.exists(USER_MARKS_FILE):
         with open(USER_MARKS_FILE, "r") as file:
-            xx = file.readlines()
+            x = file.read()
+            xx = x.split(":::")
             i=0
             for one in xx:
+                print(one)
+                if one =="end" or one==' ' or one=='' :
+                    break
                 i+=1
                 client_ip, data,nn= one.split("::")
                 mark[i] = data
@@ -114,7 +118,7 @@ def load_user_marks_file():
 def save_user_marks(client_ip, data, sign1):
     with open(USER_MARKS_FILE, "a") as file:     # a 
             file.write(
-                f"{client_ip}::{data}::{sign1}::\n")
+                f"{client_ip}::{data}::{sign1}:::end")
             
 def serverListen(clientSocket):
     global userRole
